@@ -1,0 +1,19 @@
+# pip install -r requirements.txt
+
+# vidgear
+opencv-python
+uvicorn
+aiohttp
+vidgear == 0.2.0
+
+# yolov5 object detetor
+yolov5 == 5.0.10
+
+# flask [backend]
+flask
+Flask-SQLAlchemy
+
+# image streaming
+python-engineio == 3.13.2
+python-socketio == 4.6.0
+Flask-SocketIO  == 4.3.1
