@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>flask websocket</title>
+</head>
+<body>
+	<div class="div">
+    <img id="image1">
+    <button onclick="leave()">
+
+    </button>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+    <script type="text/javascript">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        
+        leave = function () {
+            socket.emit('leave_live');
+        }
+        
+        console.log('http://' + document.domain + ':' + location.port)
+        socket.on('connect' ,function() {
+            socket.emit('live')
+        });
+        socket.on('image', function(msg) {  
+            const image_element=document.getElementById('image1');
+            image_element.src="data:image/jpeg;base64,"+msg;
+        });
+    </script>
+</body>
+</html>

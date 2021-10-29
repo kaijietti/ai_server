@@ -2,7 +2,7 @@ from os import dup
 from threading import Thread
 import time
 
-from numpy import floor
+from numpy import ceil
 
 # class StreamReader(Thread):
 
@@ -37,13 +37,14 @@ from numpy import floor
 
 class StreamReader(Thread):
 
-    def __init__(self, **dispatcher_config) -> None:
+    def __init__(self, dispatcher_config) -> None:
         Thread.__init__(self)
+        self.dispatcher_config = dispatcher_config
         self.stream = dispatcher_config.get("stream")
         self.frame_buf = dispatcher_config.get("frame_buf")
-        self.si = dispatcher_config.get("si")
-        # self.si / (1 / self.stream.framerate)
-        self.duration_count = floor(self.si * self.stream.framerate)
+        # self.si = dispatcher_config.get("si")
+        ## self.si / ( 1 / self.stream.framerate)
+        # self.duration_count = floor(self.si * self.stream.framerate)
         self.terminate = False
 
     # 阻塞添加 frame
@@ -52,7 +53,7 @@ class StreamReader(Thread):
         count = 0
         while self.terminate == False:
             frame = self.stream.read()
-            if count % self.duration_count == 0:
+            if count >= ceil(self.dispatcher_config.get("si") * self.stream.framerate):
                 count = 0
                 frame = {
                     "time" : int(time.time()),
