@@ -36,7 +36,7 @@ class ImageStreamer(Thread):
         self.terminate = True
 
 def detect_proccess(dispatcher_config, detector, frame, ts, item):
-    hint, im0, infer_time = detector.detect(frame)
+    hint, im0, infer_time, _ = detector.detect(frame)
     dispatcher_config["si"] = ( infer_time + dispatcher_config["si"] ) / 2
     item["ts"] = ts
     item["hint"] = hint

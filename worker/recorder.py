@@ -5,6 +5,7 @@ import time
 import sys
 import queue
 import cv2
+from worker.alarmer import global_alarmer
 
 sys.path.append("..")
 from config.config import record_duration
@@ -33,10 +34,14 @@ class VideoWriter(Thread):
 
         while self.terminate == False:
             # get frame
-            item = self.item_buf.get(block=True)
+            try:
+                item = self.item_buf.get(block=True, timeout=5)
+            except queue.Empty:
+                continue
             # wait 
             while item["done"] == False:
                 time.sleep(0.00001)
+
             # get info from item
             hint, im0, ts = item["hint"], item["im0"], item["ts"]
             if hint == False:
@@ -62,14 +67,22 @@ class VideoWriter(Thread):
     def stop(self):
         self.terminate = True
 
+# need detect result
 def detect_proccess(dispatcher_config, detector, frame, ts, item):
-    hint, im0, infer_time = detector.detect(frame)
+    hint, im0, infer_time, detect_result = detector.detect(frame)
     dispatcher_config["si"] = ( infer_time + dispatcher_config["si"] ) / 2
     item["ts"] = ts
     item["hint"] = hint
     item["im0"] = im0
     item["done"] = True
-
+    message = {
+        "sn": dispatcher_config["sn"],
+        "algorithm_id": dispatcher_config["algorithm_id"],
+        "timestamp": item["ts"],
+        "image": item["im0"],
+        "detect_result": detect_result
+    }
+    global_alarmer().put(**message)
 
 class Recorder(Thread):
     def __init__(self, dispatcher_config) -> None:

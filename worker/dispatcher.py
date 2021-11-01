@@ -46,18 +46,17 @@ def get_camgear_stream(rtsp_url, resolution, fps):
 #                              frame_buf
 class Dispatcher(Thread):
     # options(dict)
-    # sn          : serious number of the camera        string
-    # camera_ip   :                                     string          
-    # camera_port :                                     string        
-    # username    :                                     string           
-    # password    :                                     string        
-    # path        : /h264/ch1/sub/av_stream or /test    string       
-    # resolution  : "{}x{}".format(width, height)       string     
-    # fps         :                                     int
-    # model       : yolov5                              string  
-    # algorithm   : choose weights under /pts/{model}/  string           
-    # si          : sampling interval                   float     
-    # worker_cls  : Recorder or Liver                   class
+    # sn           : serious number of the camera        string
+    # camera_ip    :                                     string          
+    # camera_port  :                                     string        
+    # username     :                                     string           
+    # password     :                                     string        
+    # path         : /h264/ch1/sub/av_stream or /test    string       
+    # resolution   : "{}x{}".format(width, height)       string     
+    # fps          :                                     int
+    # algorithm_id : choose weights under /pts/{model}/  int           
+    # si           : sampling interval                   float     
+    # worker_cls   : Recorder or Liver                   class
 
     def __init__(self, options) -> None:
         Thread.__init__(self)
@@ -78,7 +77,8 @@ class Dispatcher(Thread):
             "si" : options.get("si"),
             "frame_buf" : queue.Queue(floor(1 / options.get("si") * frame_buf_time_in_sec)),
             # TODO:
-            # choose detector based on {model} and {algorithm}
+            # choose detector based on algorithm_id
+            "algorithm_id" : options["algorithm_id"],
             "detector" : yolov5_detect(),
             # image streaming
             "live_buf" : options.get("live_buf", None)

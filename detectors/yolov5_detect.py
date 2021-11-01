@@ -38,7 +38,7 @@ def getOpt():
     # parser.add_argument('--run', default=False, action='store_true', help='hide confidences')
     # opt = parser.parse_args()   
     class opt():
-        weights = '../pts/yolov5/yolov5s.pt'
+        weights = '../weights/yolov5/yolov5s.pt'
         img_size = 640
         device = ''
         conf_thres = 0.25
@@ -53,8 +53,9 @@ class yolov5_detect():
     
     def __init__(self) -> None:
         class opt():
-            weights = '../pts/yolov5/yolov5s.pt'
+            weights = '../weights/yolov5/yolov5s.pt'
             img_size = 640
+            max_detect = 1000
             device = ''
             conf_thres = 0.25
             iou_thres = 0.45
@@ -118,6 +119,7 @@ class yolov5_detect():
             pred = apply_classifier(pred, self.modelc, img, im0s)
 
         # Process detections
+        detect_result = ""
         for i, det in enumerate(pred):  # detections per image
             s, im0 = '', im0s.copy()
             s += '%gx%g ' % img.shape[2:]  # print string
@@ -139,8 +141,9 @@ class yolov5_detect():
                     plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=self.opt.line_thickness)
 
             # Print time (inference + NMS)
+            detect_result = s[:-2]
             print(f'{s}Done. ({t2 - t1:.3f}s)')
 
         print(f'Done. ({time.time() - t0:.3f}s)')
-        return hint, im0, time.time() - t0
+        return hint, im0, time.time() - t0, detect_result
 

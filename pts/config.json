@@ -1,9 +1,0 @@
-
-{
-    "yolov5": {
-        "coco": "../pts/yolov5/yolov5s.pt"
-    },
-    "model_name": {
-        "algorithm_name" : "path/to/weights/based/on/detectors/dir"
-    }
-}

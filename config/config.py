@@ -17,3 +17,6 @@ frame_buf_time_in_sec = 10 # 单位为秒
 # 录视频的时候，如果 record_duration 秒的时间内没有检测结果，
 # 则当前视频此时结尾，下一帧有检测结果的时候开始写到新视频文件
 record_duration = 4 # 单位为秒
+
+# 告警服务器
+ALARM_SERVER_URL = "http://127.0.0.1:8888"
