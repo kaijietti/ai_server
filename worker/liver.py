@@ -24,7 +24,10 @@ class ImageStreamer(Thread):
     def run(self) -> None:
         while self.terminate == False:
             # get frame
-            item = self.item_buf.get(block=True)
+            try:
+                item = self.item_buf.get(block=True, timeout=5)
+            except queue.Empty:
+                continue
             # wait until done
             while item["done"] == False:
                 time.sleep(0.00001)
