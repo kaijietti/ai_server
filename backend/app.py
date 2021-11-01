@@ -9,10 +9,11 @@ import base64
 import sys
 sys.path.append("..")
 from config.config import SQLALCHEMY_DATABASE_URI
-from views import Model, Algorithm, Record
+from views import Algorithm
 from worker.dispatcher import Dispatcher
 from worker.recorder import Recorder
 from worker.liver import Liver
+from worker.alarmer import global_alarmer
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -24,10 +25,8 @@ socketio = SocketIO(app)
 # ini database
 with app.app_context():
     db.create_all()
-    if Model.query.filter(Model.id > 0).count() == 0:
-        db.session.add(Model(id=1, model="yolov5"))
     if Algorithm.query.filter(Algorithm.id > 0).count() == 0:
-        db.session.add(Algorithm(id=1, algorithm="coco"))
+        db.session.add(Algorithm(id=1, algorithm="coco", weights_path=".."))
     db.session.commit()
 
 dispatchers = {}
@@ -36,16 +35,14 @@ live_queue = {}
 
 @app.route("/db")
 def dbtestfunc():
-    a = [i for i in Model.query.all()]
-    b = [i.model for i in a]
-    return json.dumps(b)
+    return json.dumps(1)
 
 
 @app.route("/test")
 def test():
     options = {
         "sn" : "1",
-        "camera_ip" : "172.23.48.1",
+        "camera_ip" : "172.24.208.1",
         "camera_port" : "",
         "username" : "",
         "password" : "",
@@ -53,11 +50,15 @@ def test():
         "resolution" : "1280x720",
         "fps" : 30,
         "model" : "yolov5",
-        "algorithm" : "coco",
+        "algorithm_id" : 1,
         "si" : 1,
-        "worker_cls" : Recorder
+        "worker_cls" : Recorder,
+        "alarm_interval" : 10
     }
     dis = Dispatcher(options)
+    global_alarmer().alram_interval[
+        "{}{}".format(options.get("sn"), options.get("algorithm_id"))
+    ] = options.get("alarm_interval")
     dispatchers[options.get("sn")] = dis
     dis.start()
     return "good to start"
@@ -76,7 +77,7 @@ def live():
     lq = queue.Queue(100)
     options = {
         "sn" : "2",
-        "camera_ip" : "172.23.48.1",
+        "camera_ip" : "172.24.208.1",
         "camera_port" : "",
         "username" : "",
         "password" : "",
