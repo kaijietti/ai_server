@@ -20,3 +20,7 @@ record_duration = 4 # 单位为秒
 
 # 告警服务器
 ALARM_SERVER_URL = "http://127.0.0.1:8888"
+
+# key format string
+## KEY_FORMAT.format(sn, algorithm_id)
+KEY_FORMAT = "[{}/{}]"

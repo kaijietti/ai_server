@@ -9,6 +9,8 @@ from worker.alarmer import global_alarmer
 
 sys.path.append("..")
 from config.config import record_duration
+from backend.views import Record
+from backend.database import db
 
 class VideoWriter(Thread):
     # item 
@@ -27,6 +29,8 @@ class VideoWriter(Thread):
         self.terminate = False
 
     def run(self) -> None:
+        # to use context
+        from backend.app import app
         blank_frame_count = 0
         save_path_format = "{}.mp4"
         save_path = ""
@@ -61,6 +65,16 @@ class VideoWriter(Thread):
                     # fps, w, h = self.fps, im0.shape[1], im0.shape[0]
                     fps, w, h = 1 / self.dispatcher_config["si"], im0.shape[1], im0.shape[0]
                     vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+
+                    # add to database
+                    if save_path != "" and vid_writer != None:
+                        with app.app_context():
+                            db.session.add(Record(
+                                sn=self.dispatcher_config["sn"],
+                                algorithm_id=self.dispatcher_config["algorithm_id"],
+                                record_path=save_path
+                            ))
+                            db.session.commit()
             if vid_writer != None:
                 vid_writer.write(im0)
     

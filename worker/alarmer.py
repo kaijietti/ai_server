@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 sys.path.append("..")
 
-from config.config import ALARM_SERVER_URL
+from config.config import ALARM_SERVER_URL, KEY_FORMAT
 
 def send(**message):
     # message:
@@ -44,7 +44,7 @@ class Alarmer():
         sn = message.get("sn")
         algorithm_id = message.get("algorithm_id")
         timestamp = message.get("timestamp")
-        key = "{}{}".format(sn, algorithm_id)
+        key = KEY_FORMAT.format(sn, algorithm_id)
         if timestamp - self.last_alarm_timestamp.get(key, 0) > self.alram_interval.get(key, 0):
             self.last_alarm_timestamp[key] = timestamp
             self.pool.submit(send, **message)

@@ -1,5 +1,5 @@
 from database import db
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify
 from flask_socketio import SocketIO
 from flask.json import jsonify
 import json
@@ -8,8 +8,8 @@ import queue
 import base64
 import sys
 sys.path.append("..")
-from config.config import SQLALCHEMY_DATABASE_URI
-from views import Algorithm
+from config.config import SQLALCHEMY_DATABASE_URI, KEY_FORMAT
+from views import Algorithm, Camera_Algorithm, Record
 from worker.dispatcher import Dispatcher
 from worker.recorder import Recorder
 from worker.liver import Liver
@@ -22,51 +22,175 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db.init_app(app)
 socketio = SocketIO(app)
 
-# ini database
+# initialize database
 with app.app_context():
     db.create_all()
     if Algorithm.query.filter(Algorithm.id > 0).count() == 0:
+        # TODO:
+        # config more basic algorithms
         db.session.add(Algorithm(id=1, algorithm="coco", weights_path=".."))
     db.session.commit()
 
-dispatchers = {}
+# TODO:
+# persist dispatcher
+# explain:
+# runtime dispatchers includes
+## record_dispatchers
+## live_dispatchers
+
+# record_dispatchers
+## record_dispatchers[KEY_FORMAT.format(sn, algorithm_id)] = 
+## dispatcher thread that are recording for camera sn under case algorithm_id
+record_dispatchers = {}
+# live_dispatchers [the same as above]
 live_dispatchers = {}
-live_queue = {}
+## live_queues[KEY_FORMAT.format(sn, algorithm_id)] = 
+## image buffer used for each socketIO
+live_queues = {}
 
-@app.route("/db")
-def dbtestfunc():
-    return json.dumps(1)
+@app.route("/start_record", methods=['POST'])
+def start_record():
+    body = request.get_json()
+    sn = body['sn']
+    camera_ip = body['camera_ip']
+    camera_port = body['camera_port']
+    username = body['username']
+    password = body['password']
+    path = body['path']
+    resolution = body['resolution']
+    fps = body['fps']
+    algorithm_id = body['algorithm_id']
+    si = body['si']
+    alarm_interval = body['alarm_interval']
 
-
-@app.route("/test")
-def test():
     options = {
-        "sn" : "1",
-        "camera_ip" : "172.24.208.1",
-        "camera_port" : "",
-        "username" : "",
-        "password" : "",
-        "path" : "/test",
-        "resolution" : "1280x720",
-        "fps" : 30,
-        "model" : "yolov5",
-        "algorithm_id" : 1,
-        "si" : 1,
-        "worker_cls" : Recorder,
-        "alarm_interval" : 10
+        "sn": sn,
+        "camera_ip": camera_ip,
+        "camera_port": camera_port,
+        "username": username,
+        "password": password,
+        "path": path,
+        "resolution": resolution,
+        "fps": fps,
+        "algorithm_id": algorithm_id,
+        "si": si,
+        "worker_cls": Recorder
     }
-    dis = Dispatcher(options)
-    global_alarmer().alram_interval[
-        "{}{}".format(options.get("sn"), options.get("algorithm_id"))
-    ] = options.get("alarm_interval")
-    dispatchers[options.get("sn")] = dis
-    dis.start()
-    return "good to start"
 
-@app.route("/stop1")
-def stop():
-    dispatchers["1"].stop()
-    return "good to stop1"
+    dis = Dispatcher(options)
+    unique_key = KEY_FORMAT.format(sn, algorithm_id)
+    if record_dispatchers.get(unique_key, None) != None:
+        return jsonify(
+            code=403,
+            message="You have already start recording for this camera {} algorithm #{}".format(sn, algorithm_id)
+        ), 403
+    global_alarmer().alram_interval[unique_key] = alarm_interval
+    record_dispatchers[unique_key] = dis
+    dis.start()
+    # add to database
+    if Camera_Algorithm.query.filter(Camera_Algorithm.sn==sn, Camera_Algorithm.algorithm_id==algorithm_id).count() == 0:
+        db.session.add(Camera_Algorithm(sn=sn,algorithm_id=algorithm_id))
+        db.session.commit()
+
+    return jsonify(
+        code=200,
+        message="Successfully start!"
+    ), 200
+    
+@app.route("/stop_record", methods=['POST'])
+def stop_record():
+    body = request.get_json()
+    sn = body["sn"]
+    algorithm_id = body["algorithm_id"]
+    key = KEY_FORMAT.format(sn, algorithm_id)
+    dis = record_dispatchers.get(key, None)
+    if dis == None:
+        return jsonify(
+            code=403,
+            message="No recorder has been started for [camera {} / algorithm #{}]".format(sn, algorithm_id)
+        ), 403
+    else:
+        dis.stop()
+        # delete 
+        record_dispatchers.pop(key, None)
+        return  jsonify(
+            code=200,
+            message="Successfully stop!"
+        ), 200
+
+@app.route("/cameras")
+def cameras():
+    cameras = [{
+        "sn": c.sn,
+        "algorithm_id": c.algorithm_id
+    } for c in Camera_Algorithm.query.all()]
+    return jsonify(
+        code=200,
+        cameras=cameras
+    ), 200
+
+@app.route("/camera_status")
+def camera_state():
+    sn = request.args.get("sn", None)
+    algorithm_id = request.args.get("algorithm_id", None)
+    if sn == None or algorithm_id == None:
+        return jsonify(
+            code=403,
+            message="Need both sn and algorithm_id"
+        )
+    # both recording and living 3
+    # is_recording              2
+    # is_living                 1
+    # none                      0
+    key = KEY_FORMAT.format(sn, algorithm_id)
+    status = 0
+    if record_dispatchers.get(key, None) != None:
+        status += 2
+    if live_dispatchers.get(key, None) != None:
+        status += 1
+    return jsonify(
+        code=200,
+        status=status
+    ), 200
+
+@app.route("/camera_records")
+def camera_records():
+    sn = request.args.get("sn", None)
+    algorithm_id = request.args.get("algorithm_id", None)
+    if sn == None or algorithm_id == None:
+        return jsonify(
+            code=403,
+            message="Need both sn and algorithm_id"
+        )
+    records = [ {
+        "sn": r.sn,
+        "algorithm_id": r.algorithm_id,
+        "record_date": r.record_date,
+        "record_path": r.record_path
+    } for r in Record.query.filter(Record.sn==sn,Record.algorithm_id==algorithm_id).all()]
+
+    return jsonify(
+        code=200,
+        records=records
+    ), 200
+
+@app.route("/algorithms")
+def algorithms():
+    algorithms = [ {
+        "algorithm_id": a.id,
+        "algorithm": a.algorithm,
+        "weights_path": a.weights_path
+    } for a in Algorithm.query.all()]
+
+    return jsonify(
+        code=200,
+        algorithms=algorithms
+    ), 200
+
+@app.route("/algorithm", methods=['POST'])
+def add_algorithm():
+    # TODO
+    return ""
 
 @app.route("/")
 def index():
@@ -92,7 +216,7 @@ def live():
     }
     dis = Dispatcher(options)
     live_dispatchers[options.get("sn")] = dis
-    live_queue[options.get("sn")] = lq
+    live_queues[options.get("sn")] = lq
     dis.start()
     while True:
         item = lq.get(block=True)
@@ -110,48 +234,3 @@ def live():
 def leave_live():
     live_dispatchers["2"].stop()
     live_dispatchers["2"].join()
-
-@app.route("/start", methods=['POST'])
-def start_new_proccessing_thread():
-    # 海康威视摄像头url样例：'rtsp://admin:password123@192.168.1.64:554/h264/ch1/sub/av_stream'
-    # {
-    #     "sn": "",
-    #     "camera_ip": "",
-    #     "camera_port": "",
-    #     "username": "admin",
-    #     "password": "password",
-    #     "path": "", # /h264/ch1/sub/av_stream or /test
-    #     "resolution": "1280x720",
-    #     "fps": 30,
-    #     "moedl": "yolov5",
-    #     "algorithm": "",
-    #     "si" : 0.1
-    # }
-    request_data = request.get_json()
-    camera_ip = request_data['camera_ip']
-    camera_port = request_data['camera_port']
-    username = request_data['username']
-    password = request_data['password']
-    path = request_data['path']
-    resolution = request_data['resolution'].split('x')
-    fps = request_data['fps']
-
-    model = request_data['model']
-    algorithm = request_data['algorithm']
-
-
-    rtsp_url = "rtsp://"
-    if username != "" and password != "":
-        rtsp_url += "{}:{}@".format(username, password)
-    if camera_ip != "":
-        rtsp_url += camera_ip
-    else:
-        return jsonify({"message": "Please specify IP Addr of the camera!"}), 403
-    if camera_port != "":
-        rtsp_url += ":{}".format(camera_port)
-    if path != "":
-        rtsp_url += path
-    else:
-        rtsp_url += "/h264/ch1/sub/av_stream"
-
-    return "TODO"
