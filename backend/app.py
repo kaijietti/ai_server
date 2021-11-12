@@ -8,7 +8,7 @@ import queue
 import base64
 import sys
 sys.path.append("..")
-from config.config import SQLALCHEMY_DATABASE_URI, KEY_FORMAT, UPLOAD_FOLDER, ALLOWED_EXTENSIONS
+from config.config import SQLALCHEMY_DATABASE_URI, KEY_FORMAT, UPLOAD_FOLDER, ALLOWED_EXTENSIONS, RECORDS_FOLDER
 from views import Algorithm, Camera_Algorithm, Record
 from worker.dispatcher import Dispatcher
 from worker.recorder import Recorder
@@ -32,6 +32,10 @@ with app.app_context():
         # config more basic algorithms
         db.session.add(Algorithm(id=1, algorithm="coco", weights_path="{}/coco.pt".format(UPLOAD_FOLDER)))
     db.session.commit()
+
+# create folders
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(RECORDS_FOLDER, exist_ok=True)
 
 # TODO:
 # persist dispatcher
