@@ -13,9 +13,6 @@ class Algorithm(db.Model):
     algorithm = db.Column(db.String(200), unique=True, nullable=False)
     weights_path = db.Column(db.String(2038), nullable=False)
 
-    def __repr__(self):
-        return '<Algorithm %r>' % self.algorithm
-
 class Record(db.Model):
     __table_args__ = {'extend_existing': True} 
     id = db.Column(db.Integer, primary_key=True)

@@ -1,6 +1,7 @@
 import requests
 import sys
-import time
+import cv2
+import base64
 from concurrent.futures import ThreadPoolExecutor
 
 sys.path.append("..")
@@ -15,10 +16,15 @@ def send(**message):
     # image
     # detect_result
     try:
+        base64_str = cv2.imencode('.jpg', message.get("image"))[1].tostring()
+        base64_str = base64.b64encode(base64_str).decode()
         requests.post(
             ALARM_SERVER_URL, 
             json={
+                "sn": message.get("sn"),
+                "algorithm_id": message.get("algorithm_id"),
                 "timestamp": message.get("timestamp"),
+                "image": base64_str,
                 "detect_result": message.get("detect_result")
             },
             timeout=3)

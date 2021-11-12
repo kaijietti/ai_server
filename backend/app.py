@@ -220,9 +220,9 @@ def add_algorithm():
         message="Successfully uploaded!"
     ), 200
 
-@app.route("/")
+@app.route("/live_demo")
 def index():
-    return render_template('index.html')
+    return render_template('live_demo.html')
 
 @socketio.on("live")
 def live():
