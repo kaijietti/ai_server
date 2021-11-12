@@ -8,6 +8,7 @@ from threading import Thread
 import sys
 sys.path.append("..")
 from detectors.yolov5_detect import yolov5_detect
+from backend.views import Algorithm
 from config.config import frame_buf_time_in_sec
 
 def build_rtsp_url(camera_ip, camera_port, username, password, path):
@@ -79,10 +80,12 @@ class Dispatcher(Thread):
             # TODO:
             # choose detector based on algorithm_id
             "algorithm_id" : options["algorithm_id"],
-            "detector" : yolov5_detect(),
+            # "detector" : yolov5_detect(),
             # image streaming
             "live_buf" : options.get("live_buf", None)
         }
+        algo = Algorithm.query.filter(Algorithm.id==options["algorithm_id"]).first()
+        self.dispatcher_config["detector"] = yolov5_detect(algo.weights_path)
         # stream reader
         self.stream_reader_thread = StreamReader(self.dispatcher_config)
         # worker

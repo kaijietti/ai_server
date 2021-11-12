@@ -50,10 +50,9 @@ def getOpt():
     return opt()
 
 class yolov5_detect():
-    
-    def __init__(self) -> None:
+    def __init__(self, weights_path) -> None:
         class opt():
-            weights = '../weights/yolov5/yolov5s.pt'
+            weights = weights_path
             img_size = 640
             max_detect = 1000
             device = ''

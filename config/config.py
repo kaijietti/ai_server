@@ -24,3 +24,10 @@ ALARM_SERVER_URL = "http://127.0.0.1:8888"
 # key format string
 ## KEY_FORMAT.format(sn, algorithm_id)
 KEY_FORMAT = "[{}/{}]"
+
+# weights file path
+UPLOAD_FOLDER = '/root/ai_server/weights/yolov5'
+ALLOWED_EXTENSIONS = {'pt'}
+
+# records path
+RECORDS_FOLDER = '/root/ai_server/records'

@@ -8,7 +8,7 @@ import cv2
 from worker.alarmer import global_alarmer
 
 sys.path.append("..")
-from config.config import record_duration
+from config.config import record_duration, RECORDS_FOLDER
 from backend.views import Record
 from backend.database import db
 
@@ -32,7 +32,7 @@ class VideoWriter(Thread):
         # to use context
         from backend.app import app
         blank_frame_count = 0
-        save_path_format = "{}.mp4"
+        save_path_format = RECORDS_FOLDER + "/{}.mp4"
         save_path = ""
         vid_writer = None
 

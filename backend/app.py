@@ -8,12 +8,14 @@ import queue
 import base64
 import sys
 sys.path.append("..")
-from config.config import SQLALCHEMY_DATABASE_URI, KEY_FORMAT
+from config.config import SQLALCHEMY_DATABASE_URI, KEY_FORMAT, UPLOAD_FOLDER, ALLOWED_EXTENSIONS
 from views import Algorithm, Camera_Algorithm, Record
 from worker.dispatcher import Dispatcher
 from worker.recorder import Recorder
 from worker.liver import Liver
 from worker.alarmer import global_alarmer
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -28,7 +30,7 @@ with app.app_context():
     if Algorithm.query.filter(Algorithm.id > 0).count() == 0:
         # TODO:
         # config more basic algorithms
-        db.session.add(Algorithm(id=1, algorithm="coco", weights_path=".."))
+        db.session.add(Algorithm(id=1, algorithm="coco", weights_path="{}/coco.pt".format(UPLOAD_FOLDER)))
     db.session.commit()
 
 # TODO:
@@ -187,10 +189,32 @@ def algorithms():
         algorithms=algorithms
     ), 200
 
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route("/algorithm", methods=['POST'])
 def add_algorithm():
     # TODO
-    return ""
+    if 'file' not in request.files:
+        return jsonify(
+            code=403,
+            message="No file part"
+        ), 403
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify(
+            code=403,
+            message="No selected part"
+        ), 403
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(UPLOAD_FOLDER, filename))
+
+    return jsonify(
+        code=200,
+        message="Successfully uploaded!"
+    ), 200
 
 @app.route("/")
 def index():
