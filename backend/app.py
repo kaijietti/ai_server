@@ -2,7 +2,6 @@ from database import db
 from flask import Flask, request, render_template, jsonify
 from flask_socketio import SocketIO
 from flask.json import jsonify
-import json
 import cv2
 import queue
 import base64
@@ -225,40 +224,59 @@ def index():
     return render_template('live_demo.html')
 
 @socketio.on("live")
-def live():
+def live(option):
+
+    sn = option['sn']
+    camera_ip = option['camera_ip']
+    camera_port = option['camera_port']
+    username = option['username']
+    password = option['password']
+    path = option['path']
+    resolution = option['resolution']
+    fps = option['fps']
+    algorithm_id = option['algorithm_id']
+    si = option['si']
+
     lq = queue.Queue(100)
+
     options = {
-        "sn" : "2",
-        "camera_ip" : "172.24.208.1",
-        "camera_port" : "",
-        "username" : "",
-        "password" : "",
-        "path" : "/test",
-        "resolution" : "1280x720",
-        "fps" : 30,
-        "model" : "yolov5",
-        "algorithm" : "coco",
-        "si" : 1,
-        "worker_cls" : Liver,
-        "live_buf" : lq
+        "sn": sn,
+        "camera_ip": camera_ip,
+        "camera_port": camera_port,
+        "username": username,
+        "password": password,
+        "path": path,
+        "resolution": resolution,
+        "fps": fps,
+        "algorithm_id": algorithm_id,
+        "si": si,
+        "worker_cls": Liver,
+        "live_buf": lq
     }
+
     dis = Dispatcher(options)
-    live_dispatchers[options.get("sn")] = dis
-    live_queues[options.get("sn")] = lq
+    unique_key = KEY_FORMAT.format(sn, algorithm_id)
+    live_dispatchers[unique_key] = dis
+    live_queues[unique_key] = lq
     dis.start()
     while True:
         item = lq.get(block=True)
         frame = cv2.imencode('.jpg', item["im0"])[1].tobytes()
-        frame= base64.encodebytes(frame).decode("utf-8")
+        frame = base64.encodebytes(frame).decode("utf-8")
         try:
             socketio.emit('image', frame)
         except KeyError:
             break
     
-    live_dispatchers[options.get("sn")].stop()
-    live_dispatchers[options.get("sn")].join()
+    live_dispatchers[unique_key].stop()
+    live_dispatchers[unique_key].join()
 
 @socketio.on("leave_live")
-def leave_live():
-    live_dispatchers["2"].stop()
-    live_dispatchers["2"].join()
+def leave_live(option):
+
+    sn = option['sn']
+    algorithm_id = option['algorithm_id']
+    unique_key = KEY_FORMAT.format(sn, algorithm_id)
+
+    live_dispatchers[unique_key].stop()
+    live_dispatchers[unique_key].join()

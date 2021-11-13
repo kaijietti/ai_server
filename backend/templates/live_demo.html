@@ -5,26 +5,41 @@
 </head>
 <body>
 	<div class="div">
-    <img id="image1">
-    <button onclick="leave()">
+        <img id="flow_image">
+        <button onclick="leave()"></button>
+    </div>
 
-    </button>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
     <script type="text/javascript">
         var socket = io.connect('http://' + document.domain + ':' + location.port);
         
         leave = function () {
-            socket.emit('leave_live');
+            socket.emit('leave_live', {
+                "sn" : "1",
+                "algorithm_id" : 1
+            });
         }
         
         console.log('http://' + document.domain + ':' + location.port)
+
         socket.on('connect' ,function() {
-            socket.emit('live')
+            socket.emit('live', {
+                "sn" : "1",
+                "camera_ip" : "192.168.5.76",
+                "camera_port" : "",
+                "username" : "",
+                "password" : "",
+                "path" : "/test",
+                "resolution" : "1280x720",
+                "fps" : 30,
+                "algorithm_id" : 1,
+                "si" : 1,
+            })
         });
         socket.on('image', function(msg) {  
-            const image_element=document.getElementById('image1');
-            image_element.src="data:image/jpeg;base64,"+msg;
+            const ele = document.getElementById('flow_image');
+            ele.src="data:image/jpeg;base64," + msg;
         });
     </script>
 </body>
