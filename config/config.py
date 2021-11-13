@@ -1,7 +1,9 @@
 # db 配置
 # 用于记录摄像头的回放视频地址、历史警告信息等
 # 目前还没使用 db 记录，所以如果想换成 mysql 也行
-SQLALCHEMY_DATABASE_URI = "sqlite:////root/ai_server/config/test.db"
+SQLITE_FILE_FOLDER = "/root/ai_server/config"
+
+SQLALCHEMY_DATABASE_URI = "sqlite:///" + SQLITE_FILE_FOLDER + "/test.db"
 
 # oss 配置 [kaijie: 需要吗？要不就直接存服务器本地然后 nginx 作为文件服务器？]
 # 用于保存视频、截图信息

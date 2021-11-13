@@ -4,7 +4,7 @@ https://blog.csdn.net/weixin_40448140/article/details/113180796
 使用 /docker 文件夹构造镜像（请测试一下hhh）
 工程目录如下（项目中sqlite地址是 hard code 的，暂时保持一样的目录结构 /root/ai_server/*）：
 ```
-root@aa41ace34d05:~/ai_server# tree -L 2 
+root@aa41ace34d05:~/ai_server# tree -L 2
 .
 ├── README.md
 ├── backend
@@ -18,10 +18,8 @@ root@aa41ace34d05:~/ai_server# tree -L 2
 │   ├── __ini__.py
 │   ├── __pycache__
 │   ├── config.py
-│   ├── schema.sql
 │   └── test.db
 ├── detectors
-│   ├── README.md
 │   ├── __ini__.py
 │   ├── __pycache__
 │   └── yolov5_detect.py
@@ -31,19 +29,19 @@ root@aa41ace34d05:~/ai_server# tree -L 2
 │   ├── README.md
 │   ├── requirements.txt
 │   └── yolov5s.pt
-├── pts
-│   ├── README.md
-│   ├── config.json
+├── records
+│   ├── 1636737518.mp4
+│   └── 1636737682.mp4
+├── weights
 │   └── yolov5
 └── worker
     ├── __ini__.py
     ├── __pycache__
+    ├── alarmer.py
     ├── dispatcher.py
     ├── liver.py
     ├── reader.py
     └── recorder.py
-
-12 directories, 24 files
 ```
 ```
 $ cd backend/
