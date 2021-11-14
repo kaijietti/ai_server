@@ -1,5 +1,5 @@
 # db 配置
-# 用于记录摄像头的回放视频地址、历史警告信息等
+# 用于记录摄像头的回放视频地址
 # 目前还没使用 db 记录，所以如果想换成 mysql 也行
 SQLITE_FILE_FOLDER = "/root/ai_server/config"
 

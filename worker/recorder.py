@@ -5,6 +5,7 @@ import time
 import sys
 import queue
 import cv2
+import os
 from worker.alarmer import global_alarmer
 
 sys.path.append("..")
@@ -32,7 +33,12 @@ class VideoWriter(Thread):
         # to use context
         from backend.app import app
         blank_frame_count = 0
-        save_path_format = RECORDS_FOLDER + "/{}.mp4"
+        save_dir = RECORDS_FOLDER + "/sn-{}/algo-{}".format(
+            self.dispatcher_config["sn"],
+            self.dispatcher_config["algorithm_id"]
+        )
+        os.makedirs(save_dir, exist_ok=True)
+        save_path_format = save_dir + "/{}.mp4"
         save_path = ""
         vid_writer = None
 
